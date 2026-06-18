@@ -12,20 +12,29 @@ const client = new Client({
     }
 });
 
-// هنا بنقول للسيرفر أول ما يطلع كود الـ QR، اطلب كود ربط مباشر للرقم ده
+let codeRequested = false;
+
+// أول ما السيرفر يلقط كود الـ QR المخفي، يستنى 5 ثواني ويطلب كود الأرقام براحته
 client.on("qr", async (qr) => {
-    console.log("تنبيه: السيرفر جاهز للربط بالكود!");
-    try {
-        // اكتب رقم موبايل الشغل هنا بكود الدولة وبدون علامة +
-        // مثال: "201272631855"
-        const myNumber = "201272631855"; 
+    if (!codeRequested) {
+        codeRequested = true;
+        console.log("تنبيه: المتصفح جاهز.. جاري طلب كود الأرقام الآن...");
         
-        const pairingCode = await client.requestPairingCode(myNumber);
-        console.log("==========================================");
-        console.log(`كود الربط الخاص بك هو: ${pairingCode}`);
-        console.log("==========================================");
-    } catch (err) {
-        console.log("خطأ في طلب كود الربط:", err.message);
+        // تأخير لمدة 5 ثواني عشان نضمن استقرار الاتصال مع سيرفر الواتساب
+        setTimeout(async () => {
+            try {
+                // اكتب رقم موبايل الشغل هنا بكود الدولة (مثال: 201272631855)
+                const myNumber = "201272631855"; 
+                
+                const pairingCode = await client.requestPairingCode(myNumber);
+                console.log("\n==========================================");
+                console.log(`كود الربط (Pairing Code) الخاص بك هو: ${pairingCode}`);
+                console.log("==========================================\n");
+            } catch (err) {
+                console.log("خطأ في طلب كود الربط:", err.message);
+                codeRequested = false; // عشان يعيد المحاولة لو فشل
+            }
+        }, 5000);
     }
 });
 
@@ -34,7 +43,7 @@ client.on("ready", () => {
 });
 
 app.get("/", (req, res) => {
-    res.send("السيرفر شغال، بص على الـ Logs عشان تشوف كود الربط!");
+    res.send("السيرفر شغال، بص على الـ Logs عشان تشوف كود الأرقام الجديد!");
 });
 
 app.post("/api/send-message", async (req, res) => {
