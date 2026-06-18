@@ -18,7 +18,7 @@ client.on("qr", async (qr) => {
     try {
         // اكتب رقم موبايل الشغل هنا بكود الدولة وبدون علامة +
         // مثال: "201272631855"
-        const myNumber = "20XXXXXXXXXX"; 
+        const myNumber = "201272631855"; 
         
         const pairingCode = await client.requestPairingCode(myNumber);
         console.log("==========================================");
