@@ -1,11 +1,9 @@
 const { Client, LocalAuth } = require("whatsapp-web.js");
 const express = require("express");
-const qrcode = require("qrcode-terminal");
 const app = express();
 
 app.use(express.json());
 
-// إعدادات خاصة لتسريع المتصفح 100% على السيرفرات الضعيفة
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
@@ -14,32 +12,37 @@ const client = new Client({
             "--no-sandbox",
             "--disable-setuid-sandbox",
             "--disable-dev-shm-usage",
-            "--disable-accelerated-2d-canvas",
-            "--no-first-run",
-            "--no-zygote",
-            "--single-process",
             "--disable-gpu",
-            "--disable-extensions",
-            "--blink-settings=imagesEnabled=false" // السطر ده بيقفل الصور تماماً عشان الصفحة تبقى خفيفة ريشة
+            "--blink-settings=imagesEnabled=false"
         ]
     }
 });
 
-// أول ما الكود يجهز هيطبع علطول جوه اللوجز
+let qrHtml = "<h1>جاري توليد كود الـ QR... اعمل تحديث كمان ثواني</h1>";
+
 client.on("qr", (qr) => {
-    console.log("\n==========================================");
-    console.log("الـ QR كود جاهز.. افتح الموبايل واسكن حالا:");
-    console.log("==========================================\n");
-    
-    qrcode.generate(qr, { small: true });
+    console.log("كود QR جديد جاهز على المتصفح!");
+    // هنا بنحوله لرابط صورة نضيفة تفتح في المتصفح علطول
+    qrHtml = `
+        <div style="text-align: center; margin-top: 50px; font-family: Arial, sans-serif;">
+            <h1>اسكان لكود الـ QR لربط الواتساب</h1>
+            <p>افتح الواتساب > الأجهزة المرتبطة > ربط جهاز</p>
+            <div style="margin: 20px auto;">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr)}" alt="QR Code" style="border: 10px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.1);"/>
+            </div>
+            <p style="color: red;">يعاد التوليد تلقائياً إذا تغير الكود</p>
+        </div>
+    `;
 });
 
 client.on("ready", () => {
-    console.log("WhatsApp Connected Successfully!");
+    qrHtml = "<h1>WhatsApp Connected Successfully!</h1>";
+    console.log("WhatsApp Connected!");
 });
 
+// الصفحة الرئيسية اللي هتفتحها وتعمل منها اسكان
 app.get("/", (req, res) => {
-    res.send("السيرفر شغال وزي الفل.. بص على اللوجز عشان تسكش الـ QR!");
+    res.send(qrHtml);
 });
 
 app.post("/api/send-message", async (req, res) => {
