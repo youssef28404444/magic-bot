@@ -1,6 +1,5 @@
 const { Client, LocalAuth } = require("whatsapp-web.js");
 const express = require("express");
-const qrcode = require("qrcode-terminal");
 const app = express();
 
 app.use(express.json());
@@ -13,32 +12,29 @@ const client = new Client({
     }
 });
 
-let qrCodeText = "";
-
-// كل ما الواتساب يولد كود QR جديد أو يجدده، السطر ده هيلقطه أوتوماتيك
-client.on("qr", (qr) => {
-    qrCodeText = qr;
-    
-    // 1. هيطبعه لك كـ QR مرسوم جوه الـ Logs في Railway عشان تسكانه علطول
-    console.log("\n--- كود QR جديد جاهز للمسح ---");
-    qrcode.generate(qr, { small: true });
-    console.log("-------------------------------\n");
+// هنا بنقول للسيرفر أول ما يطلع كود الـ QR، اطلب كود ربط مباشر للرقم ده
+client.on("qr", async (qr) => {
+    console.log("تنبيه: السيرفر جاهز للربط بالكود!");
+    try {
+        // اكتب رقم موبايل الشغل هنا بكود الدولة وبدون علامة +
+        // مثال: "201272631855"
+        const myNumber = "20XXXXXXXXXX"; 
+        
+        const pairingCode = await client.requestPairingCode(myNumber);
+        console.log("==========================================");
+        console.log(`كود الربط الخاص بك هو: ${pairingCode}`);
+        console.log("==========================================");
+    } catch (err) {
+        console.log("خطأ في طلب كود الربط:", err.message);
+    }
 });
 
 client.on("ready", () => {
-    qrCodeText = "READY";
     console.log("WhatsApp Connected Successfully!");
 });
 
-// لو حبيت تشوف الكود بنص عدي برضه من المتصفح
 app.get("/", (req, res) => {
-    if (qrCodeText === "READY") {
-        res.send("<h1>WhatsApp Connected!</h1>");
-    } else if (qrCodeText) {
-        res.send(`<h1>السيرفر شغال</h1><p>بص على الـ Logs في Railway هتلاقي الـ QR كود بيتحدث هناك أوتوماتيك.</p>`);
-    } else {
-        res.send("<h1>جاري توليد كود الـ QR... بص على اللوجز</h1>");
-    }
+    res.send("السيرفر شغال، بص على الـ Logs عشان تشوف كود الربط!");
 });
 
 app.post("/api/send-message", async (req, res) => {
