@@ -12,29 +12,28 @@ const client = new Client({
     }
 });
 
-let codeRequested = false;
+let isCodeRequested = false;
 
-// أول ما السيرفر يلقط كود الـ QR المخفي، يستنى 5 ثواني ويطلب كود الأرقام براحته
+// الحدث ده بيتنفذ أول ما صفحة الواتساب تفتح وتكون جاهزة تماماً لطلب الكود
 client.on("qr", async (qr) => {
-    if (!codeRequested) {
-        codeRequested = true;
-        console.log("تنبيه: المتصفح جاهز.. جاري طلب كود الأرقام الآن...");
+    if (!isCodeRequested) {
+        isCodeRequested = true;
+        console.log("الصفحة جاهزة ومستقرة تماماً.. جاري طلب كود الأرقام الآن...");
         
-        // تأخير لمدة 5 ثواني عشان نضمن استقرار الاتصال مع سيرفر الواتساب
-        setTimeout(async () => {
-            try {
-                // اكتب رقم موبايل الشغل هنا بكود الدولة (مثال: 201272631855)
-                const myNumber = "201272631855"; 
-                
-                const pairingCode = await client.requestPairingCode(myNumber);
-                console.log("\n==========================================");
-                console.log(`كود الربط (Pairing Code) الخاص بك هو: ${pairingCode}`);
-                console.log("==========================================\n");
-            } catch (err) {
-                console.log("خطأ في طلب كود الربط:", err.message);
-                codeRequested = false; // عشان يعيد المحاولة لو فشل
-            }
-        }, 5000);
+        try {
+            // غير الرقم اللي تحت ده وحط رقم الشغل بتاعك بين علامتين التنصيص
+            // مثال: const myNumber = "201272631855";
+            const myNumber = "201272631855"; 
+            
+            const pairingCode = await client.requestPairingCode(myNumber);
+            console.log("\n==========================================");
+            console.log(`كود الربط (Pairing Code) الخاص بك هو: ${pairingCode}`);
+            console.log("==========================================\n");
+        } catch (err) {
+            console.log("خطأ أثناء طلب كود الربط:", err.message);
+            // لو حصل خطأ بنخليه يعيد المحاولة بعد 10 ثواني تلقائياً
+            setTimeout(() => { isCodeRequested = false; }, 10000);
+        }
     }
 });
 
@@ -43,7 +42,7 @@ client.on("ready", () => {
 });
 
 app.get("/", (req, res) => {
-    res.send("السيرفر شغال، بص على الـ Logs عشان تشوف كود الأرقام الجديد!");
+    res.send("السيرفر شغال!");
 });
 
 app.post("/api/send-message", async (req, res) => {
