@@ -1,6 +1,5 @@
 const { Client, LocalAuth } = require("whatsapp-web.js");
 const express = require("express");
-const qrcode = require("qrcode-terminal");
 const app = express();
 
 app.use(express.json());
@@ -13,23 +12,29 @@ const client = new Client({
     }
 });
 
-let qrCode = "";
-
-client.on("qr", (qr) => {
-    qrCode = qr;
-    qrcode.generate(qr, { small: true });
-    console.log("QR_RECEIVED_SUCCESS");
+// هنا بنقول للسيرفر أول ما يطلع كود الـ QR، اطلب كود ربط مباشر للرقم ده
+client.on("qr", async (qr) => {
+    console.log("تنبيه: السيرفر جاهز للربط بالكود!");
+    try {
+        // اكتب رقم موبايل الشغل هنا بكود الدولة وبدون علامة +
+        // مثال: "201272631855"
+        const myNumber = "201272631855"; 
+        
+        const pairingCode = await client.requestPairingCode(myNumber);
+        console.log("==========================================");
+        console.log(`كود الربط الخاص بك هو: ${pairingCode}`);
+        console.log("==========================================");
+    } catch (err) {
+        console.log("خطأ في طلب كود الربط:", err.message);
+    }
 });
 
 client.on("ready", () => {
-    qrCode = "READY";
     console.log("WhatsApp Connected Successfully!");
 });
 
 app.get("/", (req, res) => {
-    if (qrCode === "READY") res.send("WhatsApp Connected!");
-    else if (qrCode) res.send(`<pre>${qrCode}</pre>`);
-    else res.send("Generating QR...");
+    res.send("السيرفر شغال، بص على الـ Logs عشان تشوف كود الربط!");
 });
 
 app.post("/api/send-message", async (req, res) => {
