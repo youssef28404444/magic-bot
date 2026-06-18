@@ -12,28 +12,29 @@ const client = new Client({
     }
 });
 
-// شيلنا طلب الكود التلقائي من هنا عشان ما يفضلش يجدد ويهنج
+// هنا بنقول للسيرفر أول ما يطلع كود الـ QR، اطلب كود ربط مباشر للرقم ده
+client.on("qr", async (qr) => {
+    console.log("تنبيه: السيرفر جاهز للربط بالكود!");
+    try {
+        // اكتب رقم موبايل الشغل هنا بكود الدولة وبدون علامة +
+        // مثال: "201272631855"
+        const myNumber = "20XXXXXXXXXX"; 
+        
+        const pairingCode = await client.requestPairingCode(myNumber);
+        console.log("==========================================");
+        console.log(`كود الربط الخاص بك هو: ${pairingCode}`);
+        console.log("==========================================");
+    } catch (err) {
+        console.log("خطأ في طلب كود الربط:", err.message);
+    }
+});
 
 client.on("ready", () => {
     console.log("WhatsApp Connected Successfully!");
 });
 
-// الصفحة الرئيسية للسيرفر
 app.get("/", (req, res) => {
-    res.send("اضغط على الرابط ده عشان يطلعلك كود الربط: <a href='/get-code'>اضغط هنا</a>");
-});
-
-// الرابط ده مش هيطلع الكود غير لما أنت تفتحه بنفسك، وهيفضل ثابت على الشاشة!
-app.get("/get-code", async (req, res) => {
-    try {
-        // اكتب رقم موبايل الشغل هنا بكود الدولة (مثال: 201272631855)
-        const myNumber = "201272631855"; 
-        
-        const pairingCode = await client.requestPairingCode(myNumber);
-        res.send(`<h1>كود الربط الخاص بك هو: <span style='color:red;'>${pairingCode}</span></h1><p>اكتبه في الموبايل حالا!</p>`);
-    } catch (err) {
-        res.status(500).send("خطأ في طلب الكود: " + err.message);
-    }
+    res.send("السيرفر شغال، بص على الـ Logs عشان تشوف كود الربط!");
 });
 
 app.post("/api/send-message", async (req, res) => {
