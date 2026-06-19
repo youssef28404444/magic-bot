@@ -4,11 +4,8 @@ const app = express();
 
 app.use(express.json());
 
-// كودك الأصلي مع حركة ذكية لفك حظر الكروميوم عن الـ Volume القديم
 const client = new Client({
-    authStrategy: new LocalAuth({
-        clientId: "session" // بيثبت اسم الفولدر على الداتا القديمة بالظبط
-    }),
+    authStrategy: new LocalAuth(), // كودك الأصلي والداتا القديمة زي ما هي
     puppeteer: {
         headless: true,
         args: [
@@ -17,10 +14,10 @@ const client = new Client({
             "--disable-dev-shm-usage",
             "--disable-gpu",
             "--blink-settings=imagesEnabled=false",
-            // الخيارات دي بتجبر المتصفح يفتح كـ عملية منفصلة تماماً وجديدة ويتخطى الـ Lock القديم
-            "--disable-single-click-autofill",
+            // الثلاث أسطر دول هما اللي هيحلوا الأيرور الملعون ده غصب عن السيرفر:
             "--no-zygote",
-            "--single-process"
+            "--single-process", 
+            "--disable-extensions"
         ]
     }
 });
