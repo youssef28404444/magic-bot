@@ -1,20 +1,12 @@
 const { Client, LocalAuth } = require("whatsapp-web.js");
 const express = require("express");
-const fs = require("fs");
-const path = require("path");
 const app = express();
 
 app.use(express.json());
 
-// تنظيف ملف قفل الواتساب قبل الإقلاع
-const lockFilePath = path.join(__dirname, '.wwebjs_auth', 'session', 'SingletonLock');
-if (fs.existsSync(lockFilePath)) {
-    try { fs.unlinkSync(lockFilePath); } catch (e) {}
-}
-
-// كودك الأصلي متأمن عشان يطير الأيرور 21 نهائياً
+// كودك الأصلي كما هو مع توجيه بروفايل كروميوم بعيداً عن الـ Volume لتخطي القفل
 const client = new Client({
-    authStrategy: new LocalAuth(), // الداتا والواتساب زي ما هما بالظبط
+    authStrategy: new LocalAuth(), // كودك الأصلي والداتا القديمة محفوظة ومحمية هنا
     puppeteer: {
         headless: true,
         args: [
@@ -23,9 +15,9 @@ const client = new Client({
             "--disable-dev-shm-usage",
             "--disable-gpu",
             "--blink-settings=imagesEnabled=false",
-            // السطرين دول هما الحل النهائي للأيرور ده:
-            "--disable-single-click-autofill",
-            "--user-data-dir=/tmp/chrome_isolated_profile" 
+            // السطرين دول هما اللي هيحلوا مشكلة المتصفح المعلق نهائياً من غير ما يلمسوا داتا الواتساب:
+            "--user-data-dir=/tmp/chromium_clean_profile",
+            "--disable-single-click-autofill"
         ]
     }
 });
