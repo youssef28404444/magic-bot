@@ -6,20 +6,27 @@ const app = express();
 
 app.use(express.json());
 
-// ==========================================
-// الجزء ده متفصل عشان ينظف الـ Volume بتاعك ويخليه يشتغل بدون كراش
-const lockFile = path.join(__dirname, '.wwebjs_auth', 'session', 'SingletonLock');
-if (fs.existsSync(lockFile)) {
-    try {
-        fs.unlinkSync(lockFile);
-        console.log("تم حذف ملف الـ Lock المعلق من الـ Volume بنجاح!");
-    } catch (err) {
-        console.log("ملف الـ Lock ممسوح أو فشل حذفه:", err.message);
+// تحديد مسار ملف القفل بدقة داخل الفولدر الافتراضي لكودك
+const lockFilePath = path.join(__dirname, '.wwebjs_auth', 'session', 'SingletonLock');
+
+// دالة لتنظيف القفل المعلق قبل تشغيل البوت
+function unlockSession() {
+    if (fs.existsSync(lockFilePath)) {
+        try {
+            fs.unlinkSync(lockFilePath);
+            console.log("=== [SUCCESS] تم حذف ملف الـ Lock المعلق بنجاح وكودك جاهز للإقلاع ===");
+        } catch (err) {
+            console.log("=== [INFO] لم يتم حذف الملف أو تم التعامل معه بالفعل ===", err.message);
+        }
+    } else {
+        console.log("=== [INFO] الفولدر جاهز ونظيف تماماً ولا يوجد قفل معلق ===");
     }
 }
-// ==========================================
 
-// كودك الأصلي زي ما هو بالظبط بدون أي تغيير في الإعدادات
+// تنفيذ التنظيف فوراً قبل أي عملية ربط
+unlockSession();
+
+// كودك الأصلي كما هو بدون تغيير في استراتيجية الحفظ أو المتصفح
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
@@ -70,6 +77,7 @@ app.post("/api/send-message", async (req, res) => {
     }
 });
 
+// تشغيل البوت بعد التأكد من مسح القفل
 client.initialize();
 
 const port = process.env.PORT || 8080;
