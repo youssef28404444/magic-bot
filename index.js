@@ -1,14 +1,26 @@
 const { Client, LocalAuth } = require("whatsapp-web.js");
 const express = require("express");
+const fs = require("fs");
+const path = require("path");
 const app = express();
 
 app.use(express.json());
 
-// إعداد عميل الواتساب مع حل مشكلة قفل المتصفح على الاستضافات
+// الكود ده بيمسح ملف القفل الملعون تلقائياً أول ما السيرفر يفتح وقبل ما المتصفح يشتغل
+const lockPath = path.join(__dirname, '.wwebjs_auth', 'session', 'SingletonLock');
+if (fs.existsSync(lockPath)) {
+    try {
+        fs.unlinkSync(lockPath);
+        console.log("تم حذف ملف الـ Lock القديم بنجاح، الداتا القديمة راجعة...");
+    } catch (err) {
+        console.log("فشل حذف ملف الـ Lock أو أنه ممسوح بالفعل:", err.message);
+    }
+}
+
 const client = new Client({
+    // رجعنا للفولدر القديم بتاعك الأصلي اللي فيه الداتا
     authStrategy: new LocalAuth({
-        // هنغير اسم الفولدر لاسم جديد تماماً ملمسهوش السيرفر قبل كده
-        dataPath: './wwebjs_new_session' 
+        dataPath: './' 
     }),
     puppeteer: {
         headless: true,
@@ -19,9 +31,7 @@ const client = new Client({
             "--disable-gpu",
             "--blink-settings=imagesEnabled=false",
             "--no-zygote",
-            "--single-process",
-            // السطر ده هيجبر كروميوم يفتح بروفايل معزول تماماً جوة السيرفر بعيد عن الـ Volume
-            "--user-data-dir=/tmp/puppeteer_profile" 
+            "--single-process"
         ]
     }
 });
@@ -29,8 +39,7 @@ const client = new Client({
 let qrHtml = "<h1>جاري توليد كود الـ QR... اعمل تحديث كمان ثواني</h1>";
 
 client.on("qr", (qr) => {
-    console.log("كود QR جديد جاهز على المتصفح!");
-    // توليد صفحة كود الـ QR
+    console.log("كود QR جديد جاهز!");
     qrHtml = `
         <div style="text-align: center; margin-top: 50px; font-family: Arial, sans-serif;">
             <h1>اسكان لكود الـ QR لربط الواتساب</h1>
@@ -38,7 +47,6 @@ client.on("qr", (qr) => {
             <div style="margin: 20px auto;">
                 <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr)}" alt="QR Code" style="border: 10px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.1);"/>
             </div>
-            <p style="color: red;">يعاد التوليد تلقائياً إذا تغير الكود</p>
         </div>
     `;
 });
@@ -48,12 +56,10 @@ client.on("ready", () => {
     console.log("WhatsApp Connected!");
 });
 
-// الصفحة الرئيسية لعرض الـ QR كود أو حالة الاتصال
 app.get("/", (req, res) => {
     res.send(qrHtml);
 });
 
-// API إرسال الرسائل
 app.post("/api/send-message", async (req, res) => {
     const { number, message } = req.body;
     try {
@@ -65,7 +71,6 @@ app.post("/api/send-message", async (req, res) => {
     }
 });
 
-// تشغيل العميل
 client.initialize();
 
 const port = process.env.PORT || 8080;
