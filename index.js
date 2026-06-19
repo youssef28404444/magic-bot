@@ -7,7 +7,8 @@ app.use(express.json());
 // إعداد عميل الواتساب مع حل مشكلة قفل المتصفح على الاستضافات
 const client = new Client({
     authStrategy: new LocalAuth({
-        dataPath: './whatsapp_auth_session' // مسار محدد وثابت للـ Session لمنع التضارب
+        // هنغير اسم الفولدر لاسم جديد تماماً ملمسهوش السيرفر قبل كده
+        dataPath: './wwebjs_new_session' 
     }),
     puppeteer: {
         headless: true,
@@ -18,7 +19,9 @@ const client = new Client({
             "--disable-gpu",
             "--blink-settings=imagesEnabled=false",
             "--no-zygote",
-            "--single-process" // يمنع فتح أكثر من بروسيس للمتصفح يتسبب في الكراش
+            "--single-process",
+            // السطر ده هيجبر كروميوم يفتح بروفايل معزول تماماً جوة السيرفر بعيد عن الـ Volume
+            "--user-data-dir=/tmp/puppeteer_profile" 
         ]
     }
 });
