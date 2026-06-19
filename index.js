@@ -6,19 +6,22 @@ const app = express();
 
 app.use(express.json());
 
-// الكود ده بيمسح ملف القفل الملعون تلقائياً أول ما السيرفر يفتح وقبل ما المتصفح يشتغل
-const lockPath = path.join(__dirname, '.wwebjs_auth', 'session', 'SingletonLock');
+// مسار الفولدر المربوط بالـ Volume بتاعك بالظبط
+const sessionDir = path.join(__dirname, '.wwebjs_auth', 'session');
+const lockPath = path.join(sessionDir, 'SingletonLock');
+
+// تنظيف ملف الـ Lock من الـ Volume لو موجود عشان نمنع الكراش
 if (fs.existsSync(lockPath)) {
     try {
         fs.unlinkSync(lockPath);
-        console.log("تم حذف ملف الـ Lock القديم بنجاح، الداتا القديمة راجعة...");
+        console.log("تم حذف ملف الـ Lock بنجاح من الـ Volume القديم.. جارٍ استعادة الجلسة.");
     } catch (err) {
-        console.log("فشل حذف ملف الـ Lock أو أنه ممسوح بالفعل:", err.message);
+        console.log("ملف الـ Lock ممسوح بالفعل أو فشل حذفه:", err.message);
     }
 }
 
 const client = new Client({
-    // رجعنا للفولدر القديم بتاعك الأصلي اللي فيه الداتا
+    // الإشارة إلى نفس الفولدر المربوط بالـ Volume
     authStrategy: new LocalAuth({
         dataPath: './' 
     }),
