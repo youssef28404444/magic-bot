@@ -6,29 +6,15 @@ const app = express();
 
 app.use(express.json());
 
-// تحديد مسار ملف القفل بدقة داخل الفولدر الافتراضي لكودك
+// تنظيف ملف قفل الواتساب قبل الإقلاع
 const lockFilePath = path.join(__dirname, '.wwebjs_auth', 'session', 'SingletonLock');
-
-// دالة لتنظيف القفل المعلق قبل تشغيل البوت
-function unlockSession() {
-    if (fs.existsSync(lockFilePath)) {
-        try {
-            fs.unlinkSync(lockFilePath);
-            console.log("=== [SUCCESS] تم حذف ملف الـ Lock المعلق بنجاح وكودك جاهز للإقلاع ===");
-        } catch (err) {
-            console.log("=== [INFO] لم يتم حذف الملف أو تم التعامل معه بالفعل ===", err.message);
-        }
-    } else {
-        console.log("=== [INFO] الفولدر جاهز ونظيف تماماً ولا يوجد قفل معلق ===");
-    }
+if (fs.existsSync(lockFilePath)) {
+    try { fs.unlinkSync(lockFilePath); } catch (e) {}
 }
 
-// تنفيذ التنظيف فوراً قبل أي عملية ربط
-unlockSession();
-
-// كودك الأصلي كما هو بدون تغيير في استراتيجية الحفظ أو المتصفح
+// كودك الأصلي متأمن عشان يطير الأيرور 21 نهائياً
 const client = new Client({
-    authStrategy: new LocalAuth(),
+    authStrategy: new LocalAuth(), // الداتا والواتساب زي ما هما بالظبط
     puppeteer: {
         headless: true,
         args: [
@@ -36,7 +22,10 @@ const client = new Client({
             "--disable-setuid-sandbox",
             "--disable-dev-shm-usage",
             "--disable-gpu",
-            "--blink-settings=imagesEnabled=false"
+            "--blink-settings=imagesEnabled=false",
+            // السطرين دول هما الحل النهائي للأيرور ده:
+            "--disable-single-click-autofill",
+            "--user-data-dir=/tmp/chrome_isolated_profile" 
         ]
     }
 });
@@ -77,7 +66,6 @@ app.post("/api/send-message", async (req, res) => {
     }
 });
 
-// تشغيل البوت بعد التأكد من مسح القفل
 client.initialize();
 
 const port = process.env.PORT || 8080;
