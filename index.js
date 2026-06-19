@@ -4,8 +4,11 @@ const app = express();
 
 app.use(express.json());
 
+// إعداد عميل الواتساب مع حل مشكلة قفل المتصفح على الاستضافات
 const client = new Client({
-    authStrategy: new LocalAuth(),
+    authStrategy: new LocalAuth({
+        dataPath: './whatsapp_auth_session' // مسار محدد وثابت للـ Session لمنع التضارب
+    }),
     puppeteer: {
         headless: true,
         args: [
@@ -13,7 +16,9 @@ const client = new Client({
             "--disable-setuid-sandbox",
             "--disable-dev-shm-usage",
             "--disable-gpu",
-            "--blink-settings=imagesEnabled=false"
+            "--blink-settings=imagesEnabled=false",
+            "--no-zygote",
+            "--single-process" // يمنع فتح أكثر من بروسيس للمتصفح يتسبب في الكراش
         ]
     }
 });
@@ -22,7 +27,7 @@ let qrHtml = "<h1>جاري توليد كود الـ QR... اعمل تحديث ك
 
 client.on("qr", (qr) => {
     console.log("كود QR جديد جاهز على المتصفح!");
-    // هنا بنحوله لرابط صورة نضيفة تفتح في المتصفح علطول
+    // توليد صفحة كود الـ QR
     qrHtml = `
         <div style="text-align: center; margin-top: 50px; font-family: Arial, sans-serif;">
             <h1>اسكان لكود الـ QR لربط الواتساب</h1>
@@ -36,15 +41,16 @@ client.on("qr", (qr) => {
 });
 
 client.on("ready", () => {
-    qrHtml = "<h1>WhatsApp Connected Successfully!</h1>";
+    qrHtml = "<h1 style='text-align:center; margin-top:50px; color:green; font-family:Arial;'>WhatsApp Connected Successfully!</h1>";
     console.log("WhatsApp Connected!");
 });
 
-// الصفحة الرئيسية اللي هتفتحها وتعمل منها اسكان
+// الصفحة الرئيسية لعرض الـ QR كود أو حالة الاتصال
 app.get("/", (req, res) => {
     res.send(qrHtml);
 });
 
+// API إرسال الرسائل
 app.post("/api/send-message", async (req, res) => {
     const { number, message } = req.body;
     try {
@@ -56,6 +62,7 @@ app.post("/api/send-message", async (req, res) => {
     }
 });
 
+// تشغيل العميل
 client.initialize();
 
 const port = process.env.PORT || 8080;
