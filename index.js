@@ -4,9 +4,11 @@ const app = express();
 
 app.use(express.json());
 
-// كودك الأصلي كما هو مع توجيه بروفايل كروميوم بعيداً عن الـ Volume لتخطي القفل
+// كودك الأصلي مع حركة ذكية لفك حظر الكروميوم عن الـ Volume القديم
 const client = new Client({
-    authStrategy: new LocalAuth(), // كودك الأصلي والداتا القديمة محفوظة ومحمية هنا
+    authStrategy: new LocalAuth({
+        clientId: "session" // بيثبت اسم الفولدر على الداتا القديمة بالظبط
+    }),
     puppeteer: {
         headless: true,
         args: [
@@ -15,9 +17,10 @@ const client = new Client({
             "--disable-dev-shm-usage",
             "--disable-gpu",
             "--blink-settings=imagesEnabled=false",
-            // السطرين دول هما اللي هيحلوا مشكلة المتصفح المعلق نهائياً من غير ما يلمسوا داتا الواتساب:
-            "--user-data-dir=/tmp/chromium_clean_profile",
-            "--disable-single-click-autofill"
+            // الخيارات دي بتجبر المتصفح يفتح كـ عملية منفصلة تماماً وجديدة ويتخطى الـ Lock القديم
+            "--disable-single-click-autofill",
+            "--no-zygote",
+            "--single-process"
         ]
     }
 });
